@@ -1,14 +1,21 @@
 "use client";
 
-import { useState, useRef, useEffect, CSSProperties } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useRef, useEffect, CSSProperties } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Download, Medal, Newspaper, Share2, Target, Gift, Star } from "lucide-react";
-import { useUserStore } from "../store/userStore";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
+import { 
+  Trophy, Download, Medal, Newspaper, Share2, Target, Gift, Star, Crown, Award, TrendingUp, Plus, CheckCircle, Coins, Zap, BadgeCheck
+} from "lucide-react";
+import { Car } from "lucide-react"; 
 import html2canvas from 'html2canvas';
+import { useUserStore } from "../store/userStore";
 
 // Create a simple toast implementation if the component is missing
 const useToast = () => {
@@ -127,44 +134,83 @@ const topDriver = {
   }
 };
 
-const LeaderboardCard = ({ 
-  rank, 
-  name, 
-  image, 
-  tier, 
-  level, 
-  badge, 
-  rides 
-}: { 
-  rank: number;
-  name: string;
-  image: string;
-  tier: string;
-  level: number;
-  badge?: string;
-  rides?: number;
-}) => (
-  <div className={`flex items-center gap-4 p-4 rounded-lg ${rank <= 3 ? 'bg-muted/50' : ''} hover:bg-muted/80 transition-colors`}>
-    <span className="text-2xl font-bold w-8 text-center">{rank}</span>
-    <Avatar className="w-12 h-12">
-      <AvatarImage src={image} />
-      <AvatarFallback>{name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-    </Avatar>
-    <div className="flex-1">
-      <div className="flex items-center gap-2">
-        <span className="font-medium">{name}</span>
-        {badge && <span className="text-xl">{badge}</span>}
+const LeaderboardCard = ({ rank, name, image, tier, level, badge, rides }: any) => {
+  // Get tier color
+  const getTierColor = (tier: string) => {
+    const tierColors: Record<string, string> = {
+      'Bronze': 'text-amber-700',
+      'Silver': 'text-slate-500',
+      'Gold': 'text-yellow-500',
+      'Platinum': 'text-emerald-500',
+      'Diamond': 'text-blue-500',
+      'Crown': 'text-purple-600'
+    };
+    return tierColors[tier] || 'text-gray-700';
+  };
+
+  // Calculate tier based on level (50 levels per tier)
+  const calculateTier = (level: number) => {
+    if (level < 50) return 'Bronze';
+    if (level < 100) return 'Silver';
+    if (level < 150) return 'Gold';
+    if (level < 200) return 'Platinum';
+    if (level < 250) return 'Diamond';
+    return 'Crown';
+  };
+
+  return (
+    <div className={`
+      flex items-center justify-between p-3 rounded-lg transition-all duration-300
+      ${rank === 1 ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border border-amber-200' : 
+        rank === 2 ? 'bg-gradient-to-r from-slate-50 to-gray-50 border border-slate-200' :
+        rank === 3 ? 'bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200' :
+        'glass-effect hover:bg-purple-50/50'}
+    `}>
+      <div className="flex items-center gap-4">
+        <div className={`
+          flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm
+          ${rank === 1 ? 'bg-yellow-500 text-white' : 
+            rank === 2 ? 'bg-slate-400 text-white' :
+            rank === 3 ? 'bg-amber-600 text-white' :
+            'bg-purple-100 text-purple-800'}
+        `}>
+          {rank}
+        </div>
+        <div className="flex items-center gap-3">
+          <Avatar className="border-2 border-white shadow-sm h-10 w-10">
+            <AvatarImage src={image} alt={name} />
+            <AvatarFallback>{name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="font-medium text-sm flex items-center gap-1">
+              {name}
+              {badge && (
+                <span className="ml-1.5">
+                  <BadgeCheck className="h-4 w-4 text-blue-600" />
+                </span>
+              )}
+            </p>
+            <p className="text-xs flex items-center">
+              <span className={`font-medium ${getTierColor(calculateTier(level))}`}>{calculateTier(level)}</span>
+              <span className="mx-1.5 text-gray-300">•</span>
+              <span className="text-purple-600">Level {level}</span>
+            </p>
+          </div>
+        </div>
       </div>
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Badge variant="outline" className="text-xs">
-          {tier}
-        </Badge>
-        <span>Level {level}</span>
-        {rides && <span>• {rides} rides</span>}
+      <div className="font-medium text-sm">
+        {rides ? (
+          <div className="flex items-center gap-1.5">
+            <Car className="h-3.5 w-3.5 text-purple-600" />
+            <span>{rides}</span>
+          </div>
+        ) : (
+          <span className="text-purple-600">Lv. {level}</span>
+        )}
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const MissionCard = ({ mission, status }: { mission: any, status: string }) => (
   <Card className="mb-4 overflow-hidden transition-all duration-200 hover:shadow-md">
@@ -230,19 +276,269 @@ const MissionCard = ({ mission, status }: { mission: any, status: string }) => (
   </Card>
 );
 
+const MissionCompletedBanner = ({ mission, onClose }: { mission: any, onClose: () => void }) => (
+  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-in fade-in zoom-in duration-300">
+    <div className="w-full max-w-md bg-white rounded-xl overflow-hidden shadow-2xl animate-float">
+      <div className="bg-gradient-to-r from-purple-700 to-purple-500 p-6 text-white text-center">
+        <div className="mb-2 inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm">
+          <Trophy className="w-8 h-8 text-yellow-300" />
+        </div>
+        <h3 className="text-2xl font-bold mb-1">Mission Complete!</h3>
+        <p className="opacity-90">Congratulations on completing this mission</p>
+      </div>
+      <div className="p-6 bg-gradient-to-b from-purple-50 to-white">
+        <div className="text-center mb-6">
+          <h4 className="text-xl font-bold text-purple-800 mb-2">{mission.title}</h4>
+          <p className="text-muted-foreground">{mission.description}</p>
+        </div>
+        
+        <div className="bg-purple-100 rounded-lg p-4 mb-6 flex items-center justify-center gap-3">
+          <Coins className="w-6 h-6 text-yellow-500" />
+          <span className="text-lg font-bold">{mission.reward} coins awarded!</span>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <Button variant="outline" onClick={onClose} className="border-purple-200 text-purple-700 hover:bg-purple-50">
+            Close
+          </Button>
+          <Button onClick={onClose} className="purple-button">
+            <CheckCircle className="w-4 h-4 mr-2" />
+            Claim Reward
+          </Button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 export default function LeaderboardPage() {
   const [activeTab, setActiveTab] = useState("overall");
   const [activeSubTab, setActiveSubTab] = useState("leaderboards");
   const certificateRef = useRef<HTMLDivElement>(null);
   const [showCertificate, setShowCertificate] = useState(false);
   const { toast } = useToast();
+  const { totalRides, addCoins, addLevel, addRides } = useUserStore();
+
+  // CSS for animations
+  const styles = `
+    @keyframes bounce-slow {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+    
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    
+    @keyframes zoom-in-95 {
+      from {
+        transform: scale(0.95);
+      }
+      to {
+        transform: scale(1);
+      }
+    }
+    
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0) rotate(0deg);
+      }
+      25% {
+        transform: translateY(-5px) rotate(1deg);
+      }
+      75% {
+        transform: translateY(-8px) rotate(-1deg);
+      }
+    }
+    
+    @keyframes gradient-shift {
+      0% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+    
+    @keyframes scale-in {
+      from {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    
+    .animate-bounce-slow {
+      animation: bounce-slow 3s infinite;
+    }
+    
+    .animate-float {
+      animation: float 5s ease-in-out infinite;
+    }
+    
+    .animate-gradient {
+      background-size: 200% 200%;
+      animation: gradient-shift 5s ease infinite;
+    }
+    
+    .animate-scale-in {
+      animation: scale-in 0.5s ease forwards;
+    }
+    
+    .animate-in {
+      animation-duration: 0.3s;
+      animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      animation-fill-mode: both;
+    }
+    
+    .fade-in {
+      animation-name: fade-in;
+    }
+    
+    .zoom-in-95 {
+      animation-name: zoom-in-95;
+    }
+    
+    .hover-scale-105:hover {
+      transform: scale(1.05);
+      transition: transform 0.3s ease;
+    }
+  `;
+
+  // Add enhanced styles with more purple theme
+  const enhancedStyles = `
+    :root {
+      --namma-purple-50: #f5f3ff;
+      --namma-purple-100: #ede9fe;
+      --namma-purple-200: #ddd6fe;
+      --namma-purple-300: #c4b5fd;
+      --namma-purple-400: #a78bfa;
+      --namma-purple-500: #8b5cf6;
+      --namma-purple-600: #7c3aed;
+      --namma-purple-700: #6d28d9;
+      --namma-purple-800: #5b21b6;
+      --namma-purple-900: #4c1d95;
+      --namma-purple-950: #2e1065;
+      
+      --namma-gradient-primary: linear-gradient(135deg, var(--namma-purple-700), var(--namma-purple-500));
+      --namma-gradient-secondary: linear-gradient(135deg, var(--namma-purple-900), var(--namma-purple-700));
+      --namma-gradient-accent: linear-gradient(135deg, #6366f1, #a855f7);
+      
+      --namma-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --namma-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --namma-shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --namma-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    /* Glass morphism effect classes */
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    
+    .glass-effect-dark {
+      background: rgba(79, 70, 229, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(79, 70, 229, 0.15);
+    }
+    
+    .purple-gradient-text {
+      background: var(--namma-gradient-accent);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      display: inline-block;
+    }
+    
+    .purple-card {
+      background: linear-gradient(145deg, var(--namma-purple-50), white);
+      border: 1px solid var(--namma-purple-200);
+      box-shadow: var(--namma-shadow);
+      transition: all 0.3s ease;
+    }
+    
+    .purple-card:hover {
+      box-shadow: var(--namma-shadow-lg);
+      transform: translateY(-2px);
+      border-color: var(--namma-purple-300);
+    }
+    
+    .purple-button {
+      background: var(--namma-gradient-primary);
+      color: white;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+    }
+    
+    .purple-button:hover {
+      background: var(--namma-gradient-secondary);
+      box-shadow: 0 6px 10px -1px rgba(79, 70, 229, 0.3);
+    }
+    
+    .animation-pulse-subtle {
+      animation: pulse-subtle 3s infinite;
+    }
+    
+    @keyframes pulse-subtle {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.8;
+      }
+    }
+    
+    .card-accent-border {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card-accent-border::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--namma-gradient-accent);
+    }
+  `;
+
+  // Add styles to head
+  useEffect(() => {
+    const styleElement = document.createElement('style');
+    styleElement.innerHTML = styles + enhancedStyles;
+    document.head.appendChild(styleElement);
+    
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
 
   // Define sub-tabs for each main tab
   const subTabs = {
     leaderboards: [
       { value: "overall", label: "Overall" },
-      { value: "weekly", label: "Weekly" },
-      { value: "namma", label: "Namma Driver" }
+      { value: "weekly", label: "Monthly" },
+      { value: "namma", label: "Namma Sarathi" }
     ],
     missions: [
       { value: "active", label: "Active Missions" },
@@ -251,55 +547,73 @@ export default function LeaderboardPage() {
     ]
   };
 
-  // Sample missions data
+  // Calculate mission progress based on totalRides
+  const calculateMissionProgress = (completedRides: number, totalRequired: number) => {
+    const progress = Math.min(Math.floor((completedRides / totalRequired) * 100), 100);
+    return progress;
+  };
+
+  // Sample missions data with updated requirements
   const missions = {
     active: [
       {
         title: "Peak Hour Hero",
-        description: "Complete 5 rides between 6-11 AM",
-        reward: "500 Coins + 1 Level",
-        progress: 60,
-        completedRides: 3,
-        totalRides: 5,
+        description: "Complete 9 rides between 6-11 AM",
+        reward: "500",
+        completedRides: Math.min(totalRides, 9), // Use the smaller value between totalRides and required
+        totalRides: 9, // Changed from 5 to 9 rides
+        get progress() { return calculateMissionProgress(this.completedRides, this.totalRides); },
         deadline: "Today",
-        id: "peak-hour-mission"
+        id: "peak-hour-mission",
+        icon: Target
       },
       {
         title: "Weekend Warrior",
-        description: "Complete 20 rides during weekends",
-        reward: "500 Coins + 1 Level",
-        progress: 90,
-        completedRides: 18,
-        totalRides: 20,
+        description: "Complete 8 rides during weekends",
+        reward: "500",
+        completedRides: Math.min(totalRides, 8), // Use the smaller value between totalRides and required
+        totalRides: 8, // Changed from 20 to 8 rides
+        get progress() { return calculateMissionProgress(this.completedRides, this.totalRides); },
         deadline: "Today",
-        id: "weekend-warrior-mission"
+        id: "weekend-warrior-mission",
+        icon: TrendingUp
       },
       {
         title: "Quick Start",
-        description: "Complete 1 ride",
-        reward: "500 Coins + 1 Level",
-        progress: 0,
-        completedRides: 0,
-        totalRides: 1,
+        description: "Complete 6 rides",
+        reward: "500",
+        completedRides: Math.min(totalRides, 6), // Use the smaller value between totalRides and required
+        totalRides: 6, // Changed from 1 to 6 rides
+        get progress() { return calculateMissionProgress(this.completedRides, this.totalRides); },
         deadline: "Today",
-        id: "quick-start-mission"
+        id: "quick-start-mission",
+        icon: Gift
       }
     ],
     completed: [
       {
         title: "Perfect Rating",
         description: "Maintain a 4.8+ rating for 20 consecutive rides",
-        reward: "250 Coins",
+        reward: "250",
         completedDate: "Last week"
       },
       {
         title: "Punctuality Pro",
         description: "Arrive on time for 15 consecutive pickups",
-        reward: "200 Coins",
+        reward: "200",
         completedDate: "2 weeks ago"
       }
     ]
   };
+
+  // Check for mission completion on mount and when totalRides changes
+  useEffect(() => {
+    missions.active.forEach(mission => {
+      if (totalRides >= mission.totalRides && mission.progress === 100) {
+        completeMission(mission);
+      }
+    });
+  }, [totalRides]);
 
   // State for mission completion popup
   const [missionCompletedModal, setMissionCompletedModal] = useState({
@@ -309,28 +623,30 @@ export default function LeaderboardPage() {
 
   // Function to complete a mission
   const completeMission = (mission: any) => {
-    if (mission) {
+    if (mission && mission.progress === 100 && !missionCompletedModal.show) {
       // Update state to show congratulation modal
       setMissionCompletedModal({
         show: true,
         mission
       });
       
-      // Add rewards to global variables
+      // Add rewards - reward is now just a number string like "500"
       setTimeout(() => {
-        if (mission.reward.includes("Coins")) {
-          // Extract coin amount and add to user's coins
-          const coinAmount = parseInt(mission.reward.match(/\d+/)[0]);
-          // Use the addCoins function from userStore
-          const { addCoins } = useUserStore.getState();
+        // Add coins to user's total
+        const coinAmount = parseInt(mission.reward);
+        if (!isNaN(coinAmount)) {
           addCoins(coinAmount);
         }
         
-        if (mission.reward.includes("Level")) {
-          // Add level to user
-          const { addLevel } = useUserStore.getState();
-          addLevel(1);
-        }
+        // Add level to user for all completed missions
+        addLevel(1);
+        
+        // Move mission to completed list
+        const updatedActive = missions.active.filter(m => m.id !== mission.id);
+        missions.completed.unshift({
+          ...mission,
+          completedDate: "Just now"
+        });
       }, 1000);
     }
   };
@@ -340,6 +656,16 @@ export default function LeaderboardPage() {
     setMissionCompletedModal({
       show: false,
       mission: null
+    });
+  };
+
+  // Function to add test rides (for testing purposes)
+  const handleAddTestRide = () => {
+    addRides(1);
+    toast({
+      title: "Ride Added",
+      description: `Total rides: ${totalRides + 1}`,
+      duration: 3000,
     });
   };
 
@@ -444,31 +770,45 @@ export default function LeaderboardPage() {
     };
   }, []);
 
+  // Function to handle claiming rewards
+  const claimReward = (mission: any) => {
+    // Add coins from mission reward
+    const coinReward = parseInt(mission.reward) || 0;
+    addCoins(coinReward);
+    
+    // Show success message
+    toast({
+      title: "Reward Claimed!",
+      description: `You've earned ${mission.reward} coins for completing the "${mission.title}" mission!`,
+      duration: 5000,
+    });
+  };
+
   return (
     <div className="container mx-auto py-8 px-4 max-w-5xl animate-in fade-in duration-500">
       {/* Main navigation */}
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Trophy className="w-7 h-7 text-primary" />
+        <h1 className="text-3xl font-bold flex items-center gap-2 purple-gradient-text animate-gradient">
+          <Trophy className="w-7 h-7 text-purple-600" />
           Leaderboard & Missions
         </h1>
       </div>
 
       {/* Sub Navigation */}
-      <div className="border-b mb-8">
+      <div className="border-b mb-8 border-purple-200">
         <div className="flex space-x-6">
           <button
             onClick={() => setActiveSubTab("leaderboards")}
             className={`pb-2 px-1 font-medium text-lg transition-colors relative ${
               activeSubTab === "leaderboards"
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
+                ? "text-purple-700"
+                : "text-muted-foreground hover:text-purple-600"
             }`}
           >
             Leaderboards
             {activeSubTab === "leaderboards" && (
               <div
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600"
               />
             )}
           </button>
@@ -477,14 +817,14 @@ export default function LeaderboardPage() {
             onClick={() => setActiveSubTab("missions")}
             className={`pb-2 px-1 font-medium text-lg transition-colors relative ${
               activeSubTab === "missions"
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
+                ? "text-purple-700"
+                : "text-muted-foreground hover:text-purple-600"
             }`}
           >
             Missions
             {activeSubTab === "missions" && (
               <div
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600"
               />
             )}
           </button>
@@ -494,17 +834,24 @@ export default function LeaderboardPage() {
       {/* Certificate Modal */}
       {showCertificate && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white p-8 rounded-lg max-w-3xl w-full" ref={certificateRef}>
-            <div className="border-8 border-double border-primary/20 p-8">
-              <div className="text-center">
-                <h2 className="text-3xl font-bold text-primary mb-2">NAMMA YATRI</h2>
+          <div className="bg-gradient-to-br from-white to-purple-50 p-8 rounded-lg max-w-3xl w-full shadow-2xl animate-scale-in" ref={certificateRef}>
+            <div className="border-8 border-double border-primary/20 p-8 bg-white bg-opacity-90 rounded-lg">
+              <div className="text-center relative">
+                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
+                  <img 
+                    src="https://i.ibb.co/Zzjqq0rk/d.png" 
+                    alt="Namma Yatri Logo" 
+                    className="h-16 mx-auto"
+                  />
+                </div>
+                <h2 className="text-4xl font-bold mb-2 mt-4">NAMMA YATRI</h2>
                 <h3 className="text-xl font-semibold mb-6">Certificate of Excellence</h3>
                 
                 <div className="my-8">
                   <p className="text-lg mb-2">This certifies that</p>
-                  <h2 className="text-3xl font-bold mb-2">{topDriver.name}</h2>
+                  <h2 className="text-3xl font-bold">{topDriver.name}</h2>
                   <p className="mb-6">has been recognized as</p>
-                  <h3 className="text-2xl font-bold text-primary mb-2">NAMMA DRIVER OF THE MONTH</h3>
+                  <h3 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent mb-2">NAMMA SARATHI OF THE MONTH</h3>
                   <p className="mb-8">{topDriver.achievement}</p>
                 </div>
                 
@@ -528,15 +875,29 @@ export default function LeaderboardPage() {
                   </div>
                 </div>
                 
-                <div className="absolute top-8 right-8">
-                  <Avatar className="w-24 h-24 border-2 border-primary">
-                    <AvatarImage src={topDriver.image} />
-                    <AvatarFallback>{topDriver.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                  </Avatar>
+                <div className="absolute top-8 right-8 flex flex-col items-center">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur-md opacity-60"></div>
+                    <Avatar className="w-28 h-28 border-4 border-primary relative">
+                      <AvatarImage src={topDriver.image} />
+                      <AvatarFallback>{topDriver.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                    </Avatar>
+                  </div>
+                  <div className="mt-2 p-1 px-3 bg-primary/10 rounded-full text-xs text-primary font-semibold">
+                    {topDriver.tier} • Level {topDriver.level}
+                  </div>
+                </div>
+                
+                <div className="absolute bottom-4 right-4">
+                  <img 
+                    src="https://i.ibb.co/Zzjqq0rk/d.png" 
+                    alt="QR Code" 
+                    className="h-16 w-16 opacity-30"
+                  />
                 </div>
                 
                 <div className="mt-8 pt-4 border-t border-gray-200 text-center text-sm text-gray-500">
-                  <p>Namma Yatri - Empowering Drivers, Connecting Communities</p>
+                  <p>Namma Yatri - Empowering Sarathis, Connecting Communities</p>
                 </div>
               </div>
             </div>
@@ -557,8 +918,8 @@ export default function LeaderboardPage() {
         <Tabs defaultValue="overall" className="space-y-8">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overall">Overall Leaderboard</TabsTrigger>
-            <TabsTrigger value="weekly">Weekly Leaderboard</TabsTrigger>
-            <TabsTrigger value="namma">Namma Driver</TabsTrigger>
+            <TabsTrigger value="weekly">Monthly Leaderboard</TabsTrigger>
+            <TabsTrigger value="namma">Namma Sarathi</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overall" className="space-y-4">
@@ -579,7 +940,7 @@ export default function LeaderboardPage() {
           </TabsContent>
 
           <TabsContent value="weekly" className="space-y-4">
-            <h2 className="text-2xl font-bold mb-6">This Week's Top Performers</h2>
+            <h2 className="text-2xl font-bold mb-6">This Month's Top Performers</h2>
             <div className="space-y-4">
               {weeklyLeaderboard.map((driver, index) => (
                 <LeaderboardCard
@@ -596,70 +957,132 @@ export default function LeaderboardPage() {
           </TabsContent>
 
           <TabsContent value="namma">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Trophy className="w-6 h-6 text-primary" />
-                  Namma Driver of the Month
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-white overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-purple-800 to-blue-700 text-white">
+                <CardTitle className="flex items-center gap-3">
+                  <Award className="w-8 h-8 text-yellow-300 animate-pulse" />
+                  <span className="text-3xl font-bold bg-gradient-to-r from-white to-purple-100 bg-clip-text text-transparent">Namma Sarathi of the Month</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-8">
                 <div className="text-center mb-8">
-                  <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-primary/20">
-                    <AvatarImage src={topDriver.image} />
-                    <AvatarFallback>{topDriver.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                  </Avatar>
+                  <div className="relative w-32 h-32 mx-auto mb-6">
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur-md animate-pulse"></div>
+                    <Avatar className="w-32 h-32 mx-auto border-4 border-white shadow-xl relative animate-float">
+                      <AvatarImage src={topDriver.image} />
+                      <AvatarFallback>{topDriver.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                    </Avatar>
+                  </div>
                   <h3 className="text-2xl font-bold mb-2">{topDriver.name}</h3>
                   <p className="text-muted-foreground">{topDriver.achievement}</p>
                   
                   <div className="grid grid-cols-3 gap-4 my-6">
-                    <div className="p-4 rounded-lg bg-muted/50">
+                    <div className="p-4 rounded-lg bg-muted/50 hover:bg-primary/10 transition-colors hover-scale-105">
                       <div className="text-2xl font-bold">{topDriver.stats.rides}</div>
                       <div className="text-sm text-muted-foreground">Rides</div>
                     </div>
-                    <div className="p-4 rounded-lg bg-muted/50">
+                    <div className="p-4 rounded-lg bg-muted/50 hover:bg-primary/10 transition-colors hover-scale-105">
                       <div className="text-2xl font-bold">{topDriver.stats.rating}⭐</div>
                       <div className="text-sm text-muted-foreground">Rating</div>
                     </div>
-                    <div className="p-4 rounded-lg bg-muted/50">
+                    <div className="p-4 rounded-lg bg-muted/50 hover:bg-primary/10 transition-colors hover-scale-105">
                       <div className="text-2xl font-bold">{topDriver.stats.earnings}</div>
                       <div className="text-sm text-muted-foreground">Earned</div>
                     </div>
                   </div>
 
-                  <Button className="mb-8" variant="outline" onClick={downloadCertificate}>
+                  <Button 
+                    className="mb-8 bg-gradient-to-r from-purple-600 to-blue-500 text-white hover:from-purple-700 hover:to-blue-600 shadow-md"
+                    onClick={downloadCertificate}
+                  >
                     <Download className="w-4 h-4 mr-2" />
                     Download Certificate
                   </Button>
 
                   <div className="grid md:grid-cols-3 gap-6">
-                    <Card>
-                      <CardContent className="pt-6">
-                        <Medal className="w-8 h-8 text-primary mx-auto mb-4" />
-                        <h4 className="font-semibold mb-2">Recognition</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Special medal from Namma Yatri's Founder
-                        </p>
+                    <Card className="overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:scale-105">
+                      <CardContent className="p-0">
+                        <img 
+                          src="https://i.postimg.cc/3NTQrXsS/images.jpg" 
+                          alt="Recognition" 
+                          className="w-full h-32 object-cover"
+                        />
+                        <div className="p-5">
+                          <Medal className="w-8 h-8 text-primary mx-auto mb-4" />
+                          <h4 className="font-semibold mb-2">Recognition</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Special medal from Namma Yatri's Founder
+                          </p>
+                        </div>
                       </CardContent>
                     </Card>
-                    <Card>
-                      <CardContent className="pt-6">
-                        <Newspaper className="w-8 h-8 text-primary mx-auto mb-4" />
-                        <h4 className="font-semibold mb-2">Featured Story</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Featured in local newspapers
-                        </p>
+                    <Card className="overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:scale-105">
+                      <CardContent className="p-0">
+                        <img 
+                          src="https://i.postimg.cc/5ydbYdCm/auto.jpg" 
+                          alt="Newspaper Posting" 
+                          className="w-full h-32 object-cover"
+                        />
+                        <div className="p-5">
+                          <Newspaper className="w-8 h-8 text-primary mx-auto mb-4" />
+                          <h4 className="font-semibold mb-2">Newspaper Posting</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Featured in local newspapers
+                          </p>
+                        </div>
                       </CardContent>
                     </Card>
-                    <Card>
-                      <CardContent className="pt-6">
-                        <Share2 className="w-8 h-8 text-primary mx-auto mb-4" />
-                        <h4 className="font-semibold mb-2">Social Media</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Story shared on official channels
-                        </p>
+                    <Card className="overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:scale-105">
+                      <CardContent className="p-0">
+                        <img 
+                          src="https://i.ibb.co/Z6rSKVr/dd.png" 
+                          alt="Social Media" 
+                          className="w-full h-32 object-cover"
+                        />
+                        <div className="p-5">
+                          <Share2 className="w-8 h-8 text-primary mx-auto mb-4" />
+                          <h4 className="font-semibold mb-2">Social Media</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Story shared on official channels
+                          </p>
+                        </div>
                       </CardContent>
                     </Card>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Benefits of High Rank in Leaderboard */}
+            <Card className="mt-8 border-0 shadow-lg overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-blue-700 to-purple-700 text-white">
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-6 h-6 text-yellow-300" />
+                  Benefits of High Rank in Leaderboard
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-8">
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="p-6 bg-gradient-to-br from-purple-50 to-white rounded-xl flex flex-col items-center text-center hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-purple-100">
+                    <Target className="w-12 h-12 text-purple-600 mb-4" />
+                    <h4 className="font-bold text-lg mb-2">Fast Passenger Matching</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Higher priority in matching algorithm during peak hours
+                    </p>
+                  </div>
+                  <div className="p-6 bg-gradient-to-br from-blue-50 to-white rounded-xl flex flex-col items-center text-center hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-blue-100">
+                    <Gift className="w-12 h-12 text-blue-600 mb-4" />
+                    <h4 className="font-bold text-lg mb-2">Coins Distribution</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Exclusive monthly coin rewards based on leaderboard position
+                    </p>
+                  </div>
+                  <div className="p-6 bg-gradient-to-br from-indigo-50 to-white rounded-xl flex flex-col items-center text-center hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-indigo-100">
+                    <Star className="w-12 h-12 text-indigo-600 mb-4" />
+                    <h4 className="font-bold text-lg mb-2">Premium Status</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Special badge visible to passengers, increasing trust and tips
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -667,117 +1090,118 @@ export default function LeaderboardPage() {
           </TabsContent>
         </Tabs>
       )}
-
+      
       {/* Missions Content */}
       {activeSubTab === "missions" && (
-        <Tabs defaultValue="active" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="active">Active Missions</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="active" className="space-y-4">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Active Missions</h2>
-              <Badge className="bg-primary text-white">{missions.active.length} Active</Badge>
-            </div>
-            <div className="space-y-3">
-              {missions.active.map((mission, index) => (
-                <Card key={index} className="mb-4 overflow-hidden transition-all duration-200 hover:shadow-md">
-                  <div className="p-5">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold text-lg mb-1">{mission.title}</h3>
-                        <p className="text-muted-foreground text-sm mb-2">{mission.description}</p>
-                        
-                        <div className="flex items-center gap-2 mb-3">
-                          <Badge variant="outline" className="bg-primary/10 text-primary">
-                            {mission.reward}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">{mission.deadline}</span>
-                        </div>
+        <div className="space-y-8 animate-in fade-in duration-500">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold purple-gradient-text">Daily Missions</h2>
+            <Button 
+              onClick={handleAddTestRide}
+              className="purple-button"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Test Ride
+            </Button>
+          </div>
+          
+          <div className="grid gap-6 md:grid-cols-2">
+            {missions.active.map((mission, index) => {
+              const progress = calculateMissionProgress(totalRides, mission.totalRides);
+              const isComplete = progress === 100;
+              
+              return (
+                <Card key={index} className={`card-accent-border overflow-hidden transition-all duration-300 hover:shadow-lg ${isComplete ? 'bg-gradient-to-br from-green-50 to-white' : 'purple-card'}`}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-3">
+                      {React.createElement(mission.icon, { 
+                        className: `w-6 h-6 ${isComplete ? 'text-green-500' : 'text-purple-600'}`
+                      })}
+                      <span>{mission.title}</span>
+                      {isComplete && <CheckCircle className="w-5 h-5 text-green-500 ml-auto" />}
+                    </CardTitle>
+                    <CardDescription>
+                      {mission.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span>{totalRides} / {mission.totalRides} rides</span>
+                        <span className={isComplete ? 'text-green-500 font-medium' : ''}>
+                          {progress}%
+                        </span>
                       </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => completeMission(mission)}
-                        >
-                          {mission.progress === 100 ? "Claim Reward" : "View Details"}
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-2">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>Progress: {mission.completedRides}/{mission.totalRides} rides</span>
-                        <span>{mission.progress}%</span>
-                      </div>
-                      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="h-2 bg-purple-100 rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-primary" 
-                          style={{ width: `${mission.progress}%` }}
+                          className={`h-full rounded-full ${
+                            isComplete 
+                              ? 'bg-gradient-to-r from-green-400 to-green-500 animate-pulse' 
+                              : 'bg-gradient-to-r from-purple-600 to-purple-400'
+                          }`}
+                          style={{ width: `${progress}%` }}
                         ></div>
                       </div>
+                      <div className="flex justify-between items-center mt-6">
+                        <div className="flex items-center gap-2">
+                          <Coins className="w-5 h-5 text-yellow-500" />
+                          <span className="font-medium">{mission.reward} coins</span>
+                        </div>
+                        {isComplete ? (
+                          <Button 
+                            onClick={() => claimReward(mission)}
+                            className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
+                          >
+                            Claim Reward
+                          </Button>
+                        ) : (
+                          <Button disabled variant="outline" size="sm" className="text-purple-600 border-purple-200">
+                            In Progress
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  </CardContent>
                 </Card>
-              ))}
+              );
+            })}
+          </div>
+          
+          <div className="mt-10">
+            <h2 className="text-2xl font-bold mb-6 purple-gradient-text">Benefits of High Rank</h2>
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="p-6 bg-gradient-to-br from-purple-50 to-white rounded-xl flex flex-col items-center text-center hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-purple-100">
+                <Target className="w-12 h-12 text-purple-600 mb-4" />
+                <h4 className="font-bold text-lg mb-2">Fast Passenger Matching</h4>
+                <p className="text-sm text-muted-foreground">
+                  Higher priority in matching algorithm during peak hours
+                </p>
+              </div>
+              <div className="p-6 bg-gradient-to-br from-blue-50 to-white rounded-xl flex flex-col items-center text-center hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-blue-100">
+                <Gift className="w-12 h-12 text-blue-600 mb-4" />
+                <h4 className="font-bold text-lg mb-2">Coins Distribution</h4>
+                <p className="text-sm text-muted-foreground">
+                  Exclusive monthly coin rewards based on leaderboard position
+                </p>
+              </div>
+              <div className="p-6 bg-gradient-to-br from-indigo-50 to-white rounded-xl flex flex-col items-center text-center hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-indigo-100">
+                <Star className="w-12 h-12 text-indigo-600 mb-4" />
+                <h4 className="font-bold text-lg mb-2">Premium Status</h4>
+                <p className="text-sm text-muted-foreground">
+                  Special badge visible to passengers, increasing trust and tips
+                </p>
+              </div>
             </div>
-          </TabsContent>
-
-          <TabsContent value="completed" className="space-y-4">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Completed Missions</h2>
-              <Badge className="bg-green-500 text-white">{missions.completed.length} Completed</Badge>
-            </div>
-            <div className="space-y-3">
-              {missions.completed.map((mission, index) => (
-                <MissionCard key={index} mission={mission} status="completed" />
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       )}
 
       {/* Mission Completed Modal */}
       {missionCompletedModal.show && missionCompletedModal.mission && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-white to-primary/5 p-8 rounded-lg max-w-md w-full text-center relative overflow-hidden">
-            {/* Confetti animation using pseudo-elements and animations */}
-            <div style={confettiStyle.container}>
-              {[...Array(20)].map((_, i) => (
-                <div 
-                  key={i} 
-                  style={{
-                    ...confettiStyle.confetti,
-                    left: `${Math.random() * 100}%`,
-                    animationDelay: `${Math.random() * 2}s`,
-                    backgroundColor: ['#FFC700', '#FF3E00', '#00A3FF', '#7700FF', '#00C647'][Math.floor(Math.random() * 5)]
-                  }}
-                />
-              ))}
-            </div>
-            
-            <h2 className="text-3xl font-bold mb-4 text-primary">Mission Complete!</h2>
-            <div className="w-24 h-24 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
-              <Trophy className="w-12 h-12 text-primary" />
-            </div>
-            
-            <h3 className="text-xl font-bold mb-2">{missionCompletedModal.mission.title}</h3>
-            <p className="text-muted-foreground mb-6">{missionCompletedModal.mission.description}</p>
-            
-            <div className="bg-primary/10 p-4 rounded-lg mb-6">
-              <h4 className="font-semibold mb-2">Rewards Earned:</h4>
-              <p className="text-primary font-bold text-xl">{missionCompletedModal.mission.reward}</p>
-            </div>
-            
-            <Button onClick={closeMissionCompletedModal}>
-              Awesome!
-            </Button>
-          </div>
-        </div>
+        <MissionCompletedBanner 
+          mission={missionCompletedModal.mission} 
+          onClose={closeMissionCompletedModal} 
+        />
       )}
     </div>
   );

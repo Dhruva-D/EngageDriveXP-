@@ -28,10 +28,12 @@ interface UserStore {
   currentLevel: number;
   currentTier: TierInfo;
   driverScore: number;
+  totalRides: number;
   
   // Methods
   addLevel: (amount: number) => void;
   addCoins: (amount: number) => void;
+  addRides: (amount: number) => void;
   getCurrentTierProgress: () => number;
   getLevelsToNextTier: () => number;
   calculateTier: (level: number) => TierInfo;
@@ -44,6 +46,7 @@ export const useUserStore = create<UserStore>()(
       totalCoins: 10000,
       currentLevel: 47,
       driverScore: 4.92,
+      totalRides: 0,
       currentTier: tierLevels[0], // Start at Bronze tier
       
       calculateTier: (level) => {
@@ -72,6 +75,12 @@ export const useUserStore = create<UserStore>()(
       addCoins: (amount) => {
         set((state) => ({
           totalCoins: state.totalCoins + amount
+        }));
+      },
+      
+      addRides: (amount) => {
+        set((state) => ({
+          totalRides: state.totalRides + amount
         }));
       },
       
@@ -119,7 +128,8 @@ export const useUserStore = create<UserStore>()(
         totalCoins: state.totalCoins,
         currentLevel: state.currentLevel,
         currentTier: state.currentTier,
-        driverScore: state.driverScore
+        driverScore: state.driverScore,
+        totalRides: state.totalRides
       }),
     }
   )
