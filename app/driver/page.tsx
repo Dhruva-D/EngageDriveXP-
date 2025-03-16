@@ -11,10 +11,10 @@ import { useToast } from "../components/ui/use-toast";
 
 export default function DriverPage() {
   const [acceptedRides, setAcceptedRides] = useState<RideRequest[]>([]);
-  const [viewMode, setViewMode] = useState<'requests' | 'accepted'>('requests');
+  const [viewMode, setViewMode] = useState<'requests' | 'accepted' | 'completed'>('requests');
   const [showConfetti, setShowConfetti] = useState(false);
   
-  const { pendingRequests, removeRideRequest } = useRideStore();
+  const { pendingRequests, removeRideRequest, completedRides, completeRide, totalRides, totalEarnings } = useRideStore();
   const { toast } = useToast();
 
   // Debug: Log pending requests whenever they change
@@ -63,9 +63,30 @@ export default function DriverPage() {
     }
   };
 
-  const formatTimeAgo = (date: Date) => {
+  const handleFinishRide = (ride: RideRequest) => {
+    try {
+      console.log('Finishing ride:', ride);
+      setAcceptedRides(prev => prev.filter(r => r.id !== ride.id));
+      completeRide(ride);
+      
+      toast({
+        title: "Ride Completed",
+        description: `You've completed the ride with ${ride.passenger.name}. Earned ₹${ride.fare}`,
+      });
+    } catch (error) {
+      console.error('Error completing ride:', error);
+      toast({
+        title: "Error",
+        description: "Failed to complete ride. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const formatTimeAgo = (date: Date | string) => {
     const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    const dateObj = date instanceof Date ? date : new Date(date);
+    const diffInSeconds = Math.floor((now.getTime() - dateObj.getTime()) / 1000);
     
     if (diffInSeconds < 60) {
       return `${diffInSeconds} sec ago`;
@@ -100,12 +121,46 @@ export default function DriverPage() {
               variant={viewMode === 'accepted' ? 'default' : 'outline'} 
               onClick={() => setViewMode('accepted')}
             >
-              Accepted Rides
+              Active Rides
               {acceptedRides.length > 0 && (
                 <Badge className="ml-2" variant="secondary">{acceptedRides.length}</Badge>
               )}
             </Button>
+            <Button 
+              variant={viewMode === 'completed' ? 'default' : 'outline'} 
+              onClick={() => setViewMode('completed')}
+            >
+              Completed Rides
+              {completedRides.length > 0 && (
+                <Badge className="ml-2" variant="secondary">{completedRides.length}</Badge>
+              )}
+            </Button>
           </div>
+        </div>
+
+        <div className="mb-6">
+          <Card className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/10 p-3 rounded-lg">
+                  <Car className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Rides</p>
+                  <p className="text-2xl font-bold">{totalRides}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/10 p-3 rounded-lg">
+                  <IndianRupee className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Earnings</p>
+                  <p className="text-2xl font-bold">₹{totalEarnings}</p>
+                </div>
+              </div>
+            </div>
+          </Card>
         </div>
 
         <AnimatePresence mode="wait">
@@ -213,7 +268,7 @@ export default function DriverPage() {
                 ))
               )}
             </motion.div>
-          ) : (
+          ) : viewMode === 'accepted' ? (
             <motion.div
               key="accepted"
               initial={{ opacity: 0, x: -20 }}
@@ -226,9 +281,9 @@ export default function DriverPage() {
                   <CardContent className="py-8">
                     <div className="flex flex-col items-center text-center space-y-3">
                       <Car className="h-12 w-12 text-muted-foreground" />
-                      <h3 className="text-lg font-medium">No Accepted Rides</h3>
+                      <h3 className="text-lg font-medium">No Active Rides</h3>
                       <p className="text-sm text-muted-foreground">
-                        Your accepted rides will appear here
+                        Your active rides will appear here
                       </p>
                     </div>
                   </CardContent>
@@ -292,10 +347,99 @@ export default function DriverPage() {
                           </div>
                         </div>
 
-                        <Button variant="outline" size="sm">
-                          <Phone className="h-4 w-4 mr-2" />
-                          Contact Passenger
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleFinishRide(ride)}
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            Finish Ride
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="completed"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="space-y-4"
+            >
+              {completedRides.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8">
+                    <div className="flex flex-col items-center text-center space-y-3">
+                      <Car className="h-12 w-12 text-muted-foreground" />
+                      <h3 className="text-lg font-medium">No Completed Rides</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Your completed rides will appear here
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                completedRides.map((ride) => (
+                  <Card key={ride.id}>
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <div className="relative">
+                            <img 
+                              src={ride.passenger.image} 
+                              alt={ride.passenger.name}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                            <div className="absolute -bottom-1 -right-1 bg-primary text-white text-xs rounded-full px-1">
+                              {ride.passenger.rating}★
+                            </div>
+                          </div>
+                          <div>
+                            <h3 className="font-medium">{ride.passenger.name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {ride.passenger.trips} trips
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="bg-green-500/10 text-green-500">Completed</Badge>
+                      </div>
+
+                      <div className="mt-4 space-y-3">
+                        <div className="flex items-start gap-3">
+                          <MapPin className="h-5 w-5 text-primary mt-0.5" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Pickup</p>
+                            <p className="font-medium">{ride.pickup}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <Navigation className="h-5 w-5 text-primary mt-0.5" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Dropoff</p>
+                            <p className="font-medium">{ride.dropoff}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div>
+                            <p className="text-sm text-muted-foreground">Distance</p>
+                            <p className="font-medium">{ride.distance}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Duration</p>
+                            <p className="font-medium">{ride.duration}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Fare</p>
+                            <p className="font-medium">₹{ride.fare}</p>
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

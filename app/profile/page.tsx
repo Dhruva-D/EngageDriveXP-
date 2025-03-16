@@ -4,28 +4,35 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Phone, Mail, Car, Trophy, Star, Coins } from "lucide-react";
+import { useRideStore } from "../store/rideStore";
+import { useUserStore } from "../store/userStore";
 
 export default function ProfilePage() {
+  // Get global variables from stores
+  const { totalRides, totalEarnings } = useRideStore();
+  const { currentXP, totalCoins, currentLevel, currentTier, driverScore } = useUserStore();
+  
   // Mock data - in a real app, this would come from an API
   const driverData = {
-    name: "John Driver",
-    image: "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=120&h=120&fit=crop",
+    name: "Vaibhav P R ",
+    image: "https://i.ibb.co/Zzjqq0rk/d.png",
     phone: "+91 98765 43210",
-    email: "john.driver@example.com",
-    totalRides: 1250,
-    tier: "Gold",
-    xp: 2750,
-    earnings: {
-      total: "₹125,000",
-      thisMonth: "₹15,000",
-      lastMonth: "₹12,000"
-    },
+    email: "vaibhav.driver@example.com",
     achievements: [
       { title: "1000 Rides Completed", date: "2024-12-01" },
       { title: "Top Driver - December 2024", date: "2024-12-31" },
       { title: "Perfect 5-Star Week", date: "2025-01-15" }
     ]
   };
+
+  // Format earnings for display
+  const formattedTotalEarnings = `₹${totalEarnings.toLocaleString()}`;
+  const thisMonthEarnings = "₹15,000"; // Still mock data for monthly earnings
+  const lastMonthEarnings = "₹12,000"; // Still mock data for monthly earnings
+
+  // Driver star rating value
+  const driverStarRating = 4.2;
+  const driverStarPercentage = (driverStarRating / 5) * 100;
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-5xl animate-in fade-in duration-500">
@@ -40,11 +47,11 @@ export default function ProfilePage() {
           <div className="flex items-center gap-2 mb-4">
             <Badge variant="secondary" className="text-sm px-3 py-1">
               <Star className="w-4 h-4 mr-1" />
-              {driverData.tier} Tier
+              {currentTier.name} Tier
             </Badge>
             <Badge variant="outline" className="text-sm px-3 py-1">
               <Trophy className="w-4 h-4 mr-1" />
-              Level {Math.floor(driverData.xp / 100)}
+              Level {currentLevel}
             </Badge>
           </div>
           <div className="grid grid-cols-2 gap-4 text-sm">
@@ -69,24 +76,24 @@ export default function ProfilePage() {
           <CardContent>
             <div className="flex items-center gap-2">
               <Car className="w-5 h-5 text-primary" />
-              <span className="text-2xl font-bold">{driverData.totalRides}</span>
+              <span className="text-2xl font-bold">{totalRides}</span>
             </div>
           </CardContent>
         </Card>
 
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">XP Progress</CardTitle>
+            <CardTitle className="text-lg">Driver star</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
               <Star className="w-5 h-5 text-primary" />
-              <span className="text-2xl font-bold">{driverData.xp}</span>
+              <span className="text-2xl font-bold">{driverStarRating}</span>
             </div>
             <div className="w-full h-2 bg-primary/20 rounded-full mt-2">
               <div 
                 className="h-full bg-primary rounded-full transition-all duration-500"
-                style={{ width: `${(driverData.xp % 100)}%` }}
+                style={{ width: `${driverStarPercentage}%` }}
               />
             </div>
           </CardContent>
@@ -94,15 +101,15 @@ export default function ProfilePage() {
 
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Earnings</CardTitle>
+            <CardTitle className="text-lg">Total Earnings</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
               <Coins className="w-5 h-5 text-primary" />
-              <span className="text-2xl font-bold">{driverData.earnings.thisMonth}</span>
+              <span className="text-2xl font-bold">{formattedTotalEarnings}</span>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              Last Month: {driverData.earnings.lastMonth}
+              This Month: {thisMonthEarnings}
             </p>
           </CardContent>
         </Card>

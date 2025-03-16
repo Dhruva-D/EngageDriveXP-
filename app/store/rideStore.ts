@@ -23,14 +23,21 @@ export interface RideRequest {
 
 interface RideStore {
   pendingRequests: RideRequest[];
+  completedRides: RideRequest[];
+  totalRides: number;
+  totalEarnings: number;
   addRideRequest: (request: Omit<RideRequest, "timestamp"> & { timestamp: string | Date }) => void;
   removeRideRequest: (id: string) => void;
+  completeRide: (ride: RideRequest) => void;
 }
 
 export const useRideStore = create<RideStore>()(
   persist(
     (set) => ({
       pendingRequests: [],
+      completedRides: [],
+      totalRides: 0,
+      totalEarnings: 0,
       addRideRequest: (request) => {
         const newRequest = {
           ...request,
@@ -47,10 +54,28 @@ export const useRideStore = create<RideStore>()(
           pendingRequests: state.pendingRequests.filter(request => request.id !== id)
         }));
       },
+      completeRide: (ride: RideRequest) => {
+        console.log('Completing ride:', ride);
+        // Ensure timestamp is a Date object
+        const rideWithValidDate = {
+          ...ride,
+          timestamp: ride.timestamp instanceof Date ? ride.timestamp : new Date(ride.timestamp)
+        };
+        set((state) => ({
+          completedRides: [rideWithValidDate, ...state.completedRides],
+          totalRides: state.totalRides + 1,
+          totalEarnings: state.totalEarnings + ride.fare
+        }));
+      },
     }),
     {
       name: 'ride-store',
-      partialize: (state) => ({ pendingRequests: state.pendingRequests }),
+      partialize: (state) => ({ 
+        pendingRequests: state.pendingRequests,
+        completedRides: state.completedRides,
+        totalRides: state.totalRides,
+        totalEarnings: state.totalEarnings
+      }),
     }
   )
 );
